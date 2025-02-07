@@ -58,4 +58,6 @@ include("select_device.jl")
 include("tools.jl")
 include("update_halo.jl")
 
+@info "FORK"
+
 end
