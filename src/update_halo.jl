@@ -398,7 +398,7 @@ function memcopy_threads!(dst::AbstractArray{T}, src::AbstractArray{T}) where T 
             @inbounds dst[i] = src[i]   # NOTE: We fix here exceptionally the use of @inbounds as this copy between two flat vectors (which must have the right length) is considered safe.
         end
     else
-        @inbounds for i in length(dst)
+        @inbounds for i in 1:length(dst)
             dst[i] = src[i]
         end
     end
