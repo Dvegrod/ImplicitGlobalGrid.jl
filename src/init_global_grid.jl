@@ -67,6 +67,7 @@ function init_global_grid(nx::Integer, ny::Integer, nz::Integer; dimx::Integer=0
         periodx=periodx, periody=periody, periodz=periodz,
         overlaps=overlaps, halowidths=halowidths, disp=disp,
         reorder=reorder, comm=comm, device_type=device_type, select_device=select_device, quiet=quiet);
+    activate_global_grid(gg)
     return gg.me, gg.dims, gg.nprocs, gg.coords, gg.comm; # The typical use case requires only these variables; the remaining can be obtained calling get_global_grid() if needed.
 end
 
