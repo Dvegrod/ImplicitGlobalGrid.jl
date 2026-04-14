@@ -7,11 +7,12 @@ using CellArrays
 ## HANDLING OF CUDA AND AMDGPU SUPPORT
 
 let
-    global cuda_loaded, cuda_functional, amdgpu_loaded, amdgpu_functional, set_cuda_loaded, set_cuda_functional, set_amdgpu_loaded, set_amdgpu_functional
+    global cuda_loaded, cuda_functional, amdgpu_loaded, amdgpu_functional, set_cuda_loaded, set_cuda_functional, set_amdgpu_loaded, set_amdgpu_functional, quiet_default
     _cuda_loaded::Bool        = false
     _cuda_functional::Bool    = false
     _amdgpu_loaded::Bool      = false
     _amdgpu_functional::Bool  = false
+    quiet_default::Bool       = false
     cuda_loaded()::Bool       = _cuda_loaded
     cuda_functional()::Bool   = _cuda_functional
     amdgpu_loaded()::Bool     = _amdgpu_loaded
@@ -84,13 +85,15 @@ const GLOBAL_GRID_NULL = GlobalGrid(GGInt[-1,-1,-1], GGInt[-1,-1,-1], GGInt[-1,-
 # Macro to switch on/off check_initialized() for performance reasons (potentially relevant for tools.jl).
 macro check_initialized() :(check_initialized();) end  #FIXME: Alternative: macro check_initialized() end
 let
-    global global_grid, set_global_grid, grid_is_initialized, check_initialized, get_global_grid
+    global global_grid, set_global_grid, grid_is_initialized, check_initialized, get_global_grid, set_initialized
 
     _global_grid::GlobalGrid           = GLOBAL_GRID_NULL
+    _init::Bool                        = false
     global_grid()::GlobalGrid          = (@check_initialized(); _global_grid::GlobalGrid) # Thanks to the call to check_initialized, we can be sure that _global_grid is defined and therefore must be of type GlobalGrid.
     set_global_grid(gg::GlobalGrid)    = (_global_grid = gg;)
+    set_initialized()                  = (_init = true)
     grid_is_initialized()              = (_global_grid.nprocs > 0)
-    check_initialized()                = if !grid_is_initialized() error("No function of the module can be called before init_global_grid() or after finalize_global_grid().") end
+    check_initialized()                = if !_init error("No function of the module can be called before init_global_grid() or after finalize_global_grid().") end
 
     "Return a deep copy of the global grid."
     get_global_grid()                  = deepcopy(_global_grid)

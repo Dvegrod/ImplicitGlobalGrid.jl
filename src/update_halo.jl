@@ -27,7 +27,8 @@ Update the halo of the given GPU/CPU-array(s).
     ```
 """
 function update_halo!(A::Union{GGArray, GGFieldConvertible, GGCellArray, GGCellFieldConvertible, GGField}...; dims=(NDIMS_MPI,(1:NDIMS_MPI-1)...))
-    check_initialized();
+    check_initialized()
+    if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first.") end
     As = ((extract.(A)...)...,);
     fields = wrap_field.(As);
     check_fields(fields...);
