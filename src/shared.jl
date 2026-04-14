@@ -7,12 +7,11 @@ using CellArrays
 ## HANDLING OF CUDA AND AMDGPU SUPPORT
 
 let
-    global cuda_loaded, cuda_functional, amdgpu_loaded, amdgpu_functional, set_cuda_loaded, set_cuda_functional, set_amdgpu_loaded, set_amdgpu_functional, quiet_default
+    global cuda_loaded, cuda_functional, amdgpu_loaded, amdgpu_functional, set_cuda_loaded, set_cuda_functional, set_amdgpu_loaded, set_amdgpu_functional
     _cuda_loaded::Bool        = false
     _cuda_functional::Bool    = false
     _amdgpu_loaded::Bool      = false
     _amdgpu_functional::Bool  = false
-    quiet_default::Bool       = false
     cuda_loaded()::Bool       = _cuda_loaded
     cuda_functional()::Bool   = _cuda_functional
     amdgpu_loaded()::Bool     = _amdgpu_loaded
