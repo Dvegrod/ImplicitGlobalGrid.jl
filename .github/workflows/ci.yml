@@ -21,7 +21,7 @@ jobs:
       matrix:
         version:
           - '1.9' # Minimum version supporting extensions
-          - '1.10' # Long-term support version
+          - '1.10' # Current LTS
           - '1'   # Latest stable 1.x release of Julia
           # - 'nightly'
         os:
@@ -31,12 +31,12 @@ jobs:
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         env:
           cache-name: cache-artifacts
         with:
@@ -49,14 +49,14 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v6
         with:
           files: lcov.info
   # docs:
   #   name: Documentation
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v6
   #     - uses: julia-actions/setup-julia@v1
   #       with:
   #         version: '1'
