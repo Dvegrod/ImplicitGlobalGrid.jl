@@ -84,22 +84,23 @@ const GLOBAL_GRID_NULL = GlobalGrid(GGInt[-1,-1,-1], GGInt[-1,-1,-1], GGInt[-1,-
 # Macro to switch on/off check_initialized() for performance reasons (potentially relevant for tools.jl).
 macro check_initialized() :(check_initialized();) end  #FIXME: Alternative: macro check_initialized() end
 let
-    global global_grid, set_global_grid, grid_is_initialized, check_initialized, get_global_grid, set_initialized
+    global global_grid, set_global_grid, grid_is_initialized, check_initialized, check_not_initialized, get_global_grid, set_initialized
 
     _global_grid::GlobalGrid           = GLOBAL_GRID_NULL
     _init::Bool                        = false
     global_grid()::GlobalGrid          = (@check_initialized(); _global_grid::GlobalGrid) # Thanks to the call to check_initialized, we can be sure that _global_grid is defined and therefore must be of type GlobalGrid.
     set_global_grid(gg::GlobalGrid)    = (_global_grid = gg;)
-    set_initialized()                  = (_init = true)
+    set_initialized(val = true)        = (_init = val)
     grid_is_initialized()              = (_global_grid.nprocs > 0)
     check_initialized()                = if !_init error("No function of the module can be called before init_global_grid() or after finalize_global_grid().") end
+    check_not_initialized()            = if _init error("init_global_grid() can only be called once before finalize_global_grid().") end
 
     "Return a deep copy of the global grid."
     get_global_grid()                  = deepcopy(_global_grid)
 end
 
 let 
-    global  differ_default_args, set_default_args, default
+    global  differ_default_args, set_default_args, reset_default_args, default
 
     _default_args::Dict{Symbol,Any}    = Dict([
         :dimx          => 0,
@@ -114,18 +115,20 @@ let
         :centery       => false,
         :centerz       => false,
         :overlaps      => (2, 2, 2),
-        :halowidths    => max.(1, overlaps .÷ 2),
+        :halowidths    => max.(1, (2,2,2) .÷ 2),
         :disp          => 1,
         :reorder       => 1,
         :comm          => MPI.COMM_WORLD,
-        :device_type   => DEVICE_TYPE_AUTO,
-        :select_device => true,
+        :device_type   => DEVICE_TYPE_AUTO, # as of now changing this between grids is disabled
+        :select_device => true,             # as of now changing this between grids is disabled
         :quiet         => false,        
     ])
+    DEFAULT_OF_DEFAULT_ARGS::Dict{Symbol,Any} = copy(_default_args) # This is used in the corner case of finalizing and reinitializing to reset the default arguments to their original values.
     # Check if the value set is not the same as the current default.
-    differ_default_args(args::Dict)    = any([args[key] != value for (key, value) in _default_args])
+    differ_default_args(;kwargs...)    = any([haskey(kwargs, key) && kwargs[key] != value for (key, value) in _default_args])
     # Set the new argument set as default
     set_default_args(;kwargs...)       = ([_default_args[key] = kwargs[key] for key in keys(kwargs)];nothing)
+    reset_default_args()               = _default_args = copy(DEFAULT_OF_DEFAULT_ARGS) 
     # For an argument get its default value
     default(key::Symbol)               = _default_args[key]
 end

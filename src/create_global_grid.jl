@@ -49,6 +49,9 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
     reorder                            = default(:reorder),
     comm                               = default(:comm),
     quiet                              = default(:quiet),)
+    # These have been moved out of the argument list since they are not expected to change in different grids
+    device_type=default(:device_type)
+    select_device=default(:select_device)
     check_initialized()
     nxyz = [nx, ny, nz]
     dims = [dimx, dimy, dimz]
@@ -80,16 +83,6 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
         if haskey(ENV, "IGG_USE_POLYESTER_DIMY") use_polyester[2] = (parse(Int64, ENV["IGG_USE_POLYESTER_DIMY"]) > 0); end
         if haskey(ENV, "IGG_USE_POLYESTER_DIMZ") use_polyester[3] = (parse(Int64, ENV["IGG_USE_POLYESTER_DIMZ"]) > 0); end
     end
-    if !(device_type in [DEVICE_TYPE_NONE, DEVICE_TYPE_AUTO, DEVICE_TYPE_CUDA, DEVICE_TYPE_AMDGPU])
-        error("Argument `device_type`: invalid value obtained ($device_type). Valid values are: $DEVICE_TYPE_CUDA, $DEVICE_TYPE_AMDGPU, $DEVICE_TYPE_NONE, $DEVICE_TYPE_AUTO");
-    end
-    if ((device_type == DEVICE_TYPE_AUTO) && cuda_loaded() && cuda_functional() && amdgpu_loaded() && amdgpu_functional())
-        error("Automatic detection of the device type to be used not possible: both CUDA and AMDGPU extensions are loaded and functional. Set keyword argument `device_type` to $DEVICE_TYPE_CUDA or $DEVICE_TYPE_AMDGPU.");
-    end
-    if (device_type != DEVICE_TYPE_NONE)
-        if (device_type in [DEVICE_TYPE_CUDA, DEVICE_TYPE_AUTO]) cuda_enabled = cuda_loaded() && cuda_functional(); end # NOTE: cuda could be enabled/disabled depending on some additional criteria.
-        if (device_type in [DEVICE_TYPE_AMDGPU, DEVICE_TYPE_AUTO]) amdgpu_enabled = amdgpu_loaded() && amdgpu_functional(); end # NOTE: amdgpu could be enabled/disabled depending on some additional criteria.
-    end
     if (any(nxyz .< 1)) error("Invalid arguments: nx, ny, and nz cannot be less than 1."); end
     if (any(dims .< 0)) error("Invalid arguments: dimx, dimy, and dimz cannot be negative."); end
     if (any(periods .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
@@ -106,6 +99,7 @@ her `origin_on_vertex=true` or make ny odd."); end
     if (centerz && !origin_on_vertex && iseven(nz)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin the cell center and nz being even; set eit
 her `origin_on_vertex=true` or make nz odd."); end
     if (any(halowidths .< 1)) error("Invalid arguments: halowidths cannot be less than 1."); end
+    if length(origin) != 3 error("Invalid argument: the length of the origin tuple must be at most 3."); end
     if (nx == 1) error("Invalid arguments: nx can never be 1.") end
     if (ny == 1 && nz > 1) error("Invalid arguments: ny cannot be 1 if nz is greater than 1."); end
     if (any((nxyz .== 1) .& (dims .> 1))) error("Incoherent arguments: if nx, ny, or nz is 1, then the corresponding dimx, dimy or dimz must not be set (or set 0 or 1)."); end
@@ -122,13 +116,12 @@ her `origin_on_vertex=true` or make nz odd."); end
         neighbors[:, i] .= MPI.Cart_shift(comm_cart, i - 1, disp)
     end
     nxyz_g = dims .* (nxyz .- overlaps) .+ overlaps .* (periods .== 0) # E.g. for dimension x with ol=2 and periodx=0: dimx*(nx-2)+2
-    gg = set_global_grid(GlobalGrid(nxyz_g, nxyz, dims, overlaps, halowidths, origin, origin_on_vertex, centerxyz, nprocs, me, coords, neighbors, periods, disp, reorder, comm_cart, cuda_enabled, amdgpu_enabled, cudaaware_MPI, amdgpuaware_MPI, use_polyester, quiet))
+    gg = GlobalGrid(nxyz_g, nxyz, dims, overlaps, halowidths, origin, origin_on_vertex, centerxyz, nprocs, me, coords, neighbors, periods, disp, reorder, comm_cart, cuda_enabled, amdgpu_enabled, cudaaware_MPI, amdgpuaware_MPI, use_polyester, quiet)
     cuda_support_string = (cuda_enabled && all(cudaaware_MPI)) ? "CUDA-aware" : (cuda_enabled && any(cudaaware_MPI)) ? "CUDA(-aware)" : (cuda_enabled) ? "CUDA" : ""
     amdgpu_support_string = (amdgpu_enabled && all(amdgpuaware_MPI)) ? "AMDGPU-aware" : (amdgpu_enabled && any(amdgpuaware_MPI)) ? "AMDGPU(-aware)" : (amdgpu_enabled) ? "AMDGPU" : ""
     gpu_support_string = join(filter(!isempty, [cuda_support_string, amdgpu_support_string]), ", ")
     support_string = isempty(gpu_support_string) ? "none" : gpu_support_string
     if (!quiet && me == 0) println("Global grid: $(nxyz_g[1])x$(nxyz_g[2])x$(nxyz_g[3]) (nprocs: $nprocs, dims: $(dims[1])x$(dims[2])x$(dims[3]); device support: $support_string)"); end
-    if ((cuda_enabled || amdgpu_enabled) && select_device) _select_device(); end
-    init_timing_functions()
+    if ((cuda_enabled || amdgpu_enabled) && select_device) _select_device(gg); end
     return gg
 end

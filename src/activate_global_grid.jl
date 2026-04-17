@@ -26,5 +26,6 @@ function activate_global_grid(new_gg :: GlobalGrid) :: Union{GlobalGrid, Nothing
     check_initialized()
     old_gg = get_global_grid()
     set_global_grid(new_gg)
+    init_timing_functions()
     return grid_is_initialized() ? old_gg : Nothing
 end
