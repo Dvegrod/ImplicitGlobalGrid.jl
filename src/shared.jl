@@ -98,6 +98,38 @@ let
     get_global_grid()                  = deepcopy(_global_grid)
 end
 
+let 
+    global  differ_default_args, set_default_args, default
+
+    _default_args::Dict{Symbol,Any}    = Dict([
+        :dimx          => 0,
+        :dimy          => 0,
+        :dimz          => 0,
+        :periodx       => 0,
+        :periody       => 0,
+        :periodz       => 0,
+        :origin        => (0.0, 0.0, 0.0),
+        :origin_on_vertex => false,
+        :centerx       => false,
+        :centery       => false,
+        :centerz       => false,
+        :overlaps      => (2, 2, 2),
+        :halowidths    => max.(1, overlaps .÷ 2),
+        :disp          => 1,
+        :reorder       => 1,
+        :comm          => MPI.COMM_WORLD,
+        :device_type   => DEVICE_TYPE_AUTO,
+        :select_device => true,
+        :quiet         => false,        
+    ])
+    # Check if the value set is not the same as the current default.
+    differ_default_args(args::Dict)    = any([args[key] != value for (key, value) in _default_args])
+    # Set the new argument set as default
+    set_default_args(;kwargs...)       = ([_default_args[key] = kwargs[key] for key in keys(kwargs)];nothing)
+    # For an argument get its default value
+    default(key::Symbol)               = _default_args[key]
+end
+
 
 ##-------------
 ## SYNTAX SUGAR

@@ -3,7 +3,7 @@ export activate_global_grid
 """
     old_gg = activate_global_grid(new_grid)
 
-Replaces the current active grid parameters with the ones provided by the new_grid. The previously active grid is returned. Only one grid can be active at the same time.
+Replaces the current active grid parameters with the ones provided by the new_grid. The previously active grid is returned. Only one grid exchange can be active at the same time.
 
 
 # Argument

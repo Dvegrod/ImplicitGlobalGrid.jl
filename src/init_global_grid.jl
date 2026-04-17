@@ -1,14 +1,33 @@
 export init_global_grid
 
-function init_global_grid(init_MPI::Bool=true)
-    if grid_is_initialized() error("The global grid has already been initialized.") end
+function init_global_grid(;save_kwarg_defaults::Bool=false, dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Union{Bool,Integer}=0, periody::Union{Bool,Integer}=0, periodz::Union{Bool,Integer}=0, origin::Union{Tuple,AbstractFloat}=(0.0, 0.0, 0.0), origin_on_vertex::Bool=false, centerx::Bool=false, centery::Bool=false, centerz::Bool=false, overlaps::Tuple{Int,Int,Int}=(2,2,2), halowidths::Tuple{Int,Int,Int}=max.(1,overlaps.÷2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, quiet::Bool=false)
+    if grid_is_initialized() error("The global grid has already been initialized."); end
+    if haskey(ENV, "IGG_LOOPVECTORIZATION") error("Environment variable IGG_LOOPVECTORIZATION is not supported anymore. Use IGG_USE_POLYESTER instead."); end
+    # Check no default updates are passed if save_kwarg_defaults is false
+    if differ_default_args(
+            dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
+            centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm, 
+            device_type=device_type, select_device=select_device, quiet=quiet)
+        if save_kwarg_defaults # Check that new defaults make sense
+            if (any([dimx, dimy, dimz] .< 0)) error("Invalid arguments: dimx, dimy, and dimz cannot be negative."); end
+            if (any([periodx, periody, periodz] .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
+            if (any(halowidths .< 1)) error("Invalid arguments: halowidths cannot be less than 1."); end
+            if (any((overlaps .> 0) .& (halowidths .> overlaps .÷ 2))) error("Incoherent arguments: if overlap is greater than 0, then halowidth cannot be greater than overlap÷2, in each dimension."); end
+            set_default_args(
+                dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
+                centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm, 
+                device_type=device_type, select_device=select_device, quiet=quiet)
+        else
+            error("Different default grid arguments have been passed with save_kwarg_defaults=false, set to true to change default grid creation parameters")
+        end
+    end
     set_cuda_loaded()
     set_cuda_functional()
     set_amdgpu_loaded()
     set_amdgpu_functional()
     if (init_MPI)  # NOTE: init MPI only, once the input arguments have been checked.
         if (MPI.Initialized()) error("MPI is already initialized. Set the argument 'init_MPI=false'."); end
-        MPI.Init();
+        MPI.Init()
     else
         if (!MPI.Initialized()) error("MPI has not been initialized beforehand. Remove the argument 'init_MPI=false'."); end  # Ensure that MPI is always initialized after init_global_grid().
     end
@@ -19,7 +38,7 @@ end
     init_global_grid(nx, ny, nz)
     init_global_grid()
     me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, nz; <keyword arguments>)
-    me, dims, nprocs, coords, comm_cart = init_global_grid(<init_MPI>)
+    me, dims, nprocs, coords, comm_cart = init_global_grid(<keyword arguments>)
 
 Initialize a Cartesian grid of MPI processes (and also MPI itself by default) defining implicitely a global grid. 
 
@@ -60,13 +79,21 @@ For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny
 
 See also: [`finalize_global_grid`](@ref), [`select_device`](@ref)
 """
-function init_global_grid(nx::Integer, ny::Integer, nz::Integer; dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Integer=0, periody::Integer=0, periodz::Integer=0, overlaps::Tuple{Int,Int,Int}=(2,2,2), halowidths::Tuple{Int,Int,Int}=max.(1,overlaps.÷2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, quiet::Bool=false)
-    init_global_grid(init_MPI);
-    gg = create_global_grid(nx, ny, nz, 
-        dimx=dimx, dimy=dimy, dimz=dimz, 
+function init_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1; dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Union{Bool,Integer}=0, periody::Union{Bool,Integer}=0, periodz::Union{Bool,Integer}=0, origin::Union{Tuple,AbstractFloat}=(0.0, 0.0, 0.0), origin_on_vertex::Bool=false, centerx::Bool=false, centery::Bool=false, centerz::Bool=false, overlaps::Tuple{Int,Int,Int}=(2,2,2), halowidths::Tuple{Int,Int,Int}=max.(1,overlaps.÷2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, quiet::Bool=false)
+    init_global_grid(;save_kwarg_defaults=save_kwarg_defaults,
+        dimx=dimx, dimy=dimy, dimz=dimz,
         periodx=periodx, periody=periody, periodz=periodz,
+        origin=origin, origin_on_vertex=origin_on_vertex,
+        centerx=centerx, centery=centery, centerz=centerz,
         overlaps=overlaps, halowidths=halowidths, disp=disp,
-        reorder=reorder, comm=comm, device_type=device_type, select_device=select_device, quiet=quiet);
+        reorder=reorder, comm=comm, device_type=device_type, select_device=select_device, init_MPI=init_MPI, quiet=quiet)
+    gg = create_global_grid(nx, ny, nz,
+        dimx=dimx, dimy=dimy, dimz=dimz,
+        periodx=periodx, periody=periody, periodz=periodz,
+        origin=origin, origin_on_vertex=origin_on_vertex,
+        centerx=centerx, centery=centery, centerz=centerz,
+        overlaps=overlaps, halowidths=halowidths, disp=disp,
+        reorder=reorder, comm=comm, quiet=quiet);
     activate_global_grid(gg)
     return gg.me, gg.dims, gg.nprocs, gg.coords, gg.comm; # The typical use case requires only these variables; the remaining can be obtained calling get_global_grid() if needed.
 end
