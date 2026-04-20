@@ -27,10 +27,6 @@ function init_global_grid(;dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, pe
     # Device type checks and settings
     if !(device_type in [DEVICE_TYPE_NONE, DEVICE_TYPE_AUTO, DEVICE_TYPE_CUDA, DEVICE_TYPE_AMDGPU]) error("Argument `device_type`: invalid value obtained ($device_type). Valid values are: $DEVICE_TYPE_CUDA, $DEVICE_TYPE_AMDGPU, $DEVICE_TYPE_NONE, $DEVICE_TYPE_AUTO"); end
     if ((device_type == DEVICE_TYPE_AUTO) && cuda_loaded() && cuda_functional() && amdgpu_loaded() && amdgpu_functional()) error("Automatic detection of the device type to be used not possible: both CUDA and AMDGPU extensions are loaded and functional. Set keyword argument `device_type` to $DEVICE_TYPE_CUDA or $DEVICE_TYPE_AMDGPU."); end
-    if (device_type != DEVICE_TYPE_NONE)
-        if (device_type in [DEVICE_TYPE_CUDA, DEVICE_TYPE_AUTO]) cuda_enabled = cuda_loaded() && cuda_functional(); end # NOTE: cuda could be enabled/disabled depending on some additional criteria.
-        if (device_type in [DEVICE_TYPE_AMDGPU, DEVICE_TYPE_AUTO]) amdgpu_enabled = amdgpu_loaded() && amdgpu_functional(); end # NOTE: amdgpu could be enabled/disabled depending on some additional criteria.
-    end
     if differ_default_args(device_type=device_type, select_device=select_device) set_default_args(device_type=device_type, select_device=select_device); end
     # Set bools
     set_cuda_loaded()

@@ -85,6 +85,10 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
         if haskey(ENV, "IGG_USE_POLYESTER_DIMY") use_polyester[2] = (parse(Int64, ENV["IGG_USE_POLYESTER_DIMY"]) > 0); end
         if haskey(ENV, "IGG_USE_POLYESTER_DIMZ") use_polyester[3] = (parse(Int64, ENV["IGG_USE_POLYESTER_DIMZ"]) > 0); end
     end
+    if (device_type != DEVICE_TYPE_NONE)
+        if (device_type in [DEVICE_TYPE_CUDA,   DEVICE_TYPE_AUTO]) cuda_enabled   = cuda_loaded() && cuda_functional()  end # NOTE: cuda could be enabled/disabled depending on some additional criteria.
+        if (device_type in [DEVICE_TYPE_AMDGPU, DEVICE_TYPE_AUTO]) amdgpu_enabled = amdgpu_loaded() && amdgpu_functional() end # NOTE: amdgpu could be enabled/disabled depending on some additional criteria.
+    end
     if (any(nxyz .< 1)) error("Invalid arguments: nx, ny, and nz cannot be less than 1."); end
     if (any(dims .< 0)) error("Invalid arguments: dimx, dimy, and dimz cannot be negative."); end
     if (any(periods .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
