@@ -5,7 +5,7 @@ function init_global_grid(;dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, pe
     if haskey(ENV, "IGG_LOOPVECTORIZATION")
         error("Environment variable IGG_LOOPVECTORIZATION is not supported anymore. Use IGG_USE_POLYESTER instead.")
     end
-    # Check no default updates are passed if save_kwarg_defaults is false, device checks are excempted
+    # Check no default updates are passed if save_kwarg_defaults is false, device checks are excepmted
     if differ_default_args(
         dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
         centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm,
@@ -15,6 +15,7 @@ function init_global_grid(;dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, pe
             if (any([periodx, periody, periodz] .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
             if (any(halowidths .< 1)) error("Invalid arguments: halowidths cannot be less than 1."); end
             if (any((overlaps .> 0) .& (halowidths .> overlaps .÷ 2))) error("Incoherent arguments: if overlap is greater than 0, then halowidth cannot be greater than overlap÷2, in each dimension."); end
+            if length(origin) != 3 error("Invalid argument: the length of the origin tuple must be at most 3."); end
             set_default_args(
                 dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
                 centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm,
