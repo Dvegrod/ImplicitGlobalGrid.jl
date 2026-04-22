@@ -3,11 +3,12 @@ export update_halo!
 """
     update_halo!(A)
     update_halo!(A...)
+    update_halo!(A..., global_grid=gg)
 
 !!! note "Advanced"
         update_halo!(A, B, (A=C, halowidths=..., (A=D, halowidths=...), ...)
 
-Update the halo of the given GPU/CPU-array(s).
+Update the halo of the given GPU/CPU-array(s) following the currently active global grid specification or a explicitly passed global grid.
 
 # Typical use cases:
     update_halo!(A)                                # Update the halo of the array A.
@@ -26,13 +27,16 @@ Update the halo of the given GPU/CPU-array(s).
     shell> export IGG_ROCMAWARE_MPI=1
     ```
 """
-function update_halo!(A::Union{GGArray, GGFieldConvertible, GGCellArray, GGCellFieldConvertible, GGField}...; dims=(NDIMS_MPI,(1:NDIMS_MPI-1)...))
+function update_halo!(A::Union{GGArray, GGFieldConvertible, GGCellArray, GGCellFieldConvertible, GGField}...; dims=(NDIMS_MPI,(1:NDIMS_MPI-1)...), global_grid=get_global_grid())
     check_initialized()
+    old = get_global_grid()
+    activate_global_grid(global_grid)
     if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first.") end
     As = ((extract.(A)...)...,);
     fields = wrap_field.(As);
     check_fields(fields...);
     _update_halo!(fields...; dims=dims);  # Assignment of A to fields in the internal function _update_halo!() as vararg A can consist of multiple fields; A will be used for a single field in the following (The args of update_halo! must however be "A..." for maximal simplicity and elegance for the user).
+    activate_global_grid(old)
     return nothing
 end
 

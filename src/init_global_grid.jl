@@ -15,6 +15,8 @@ function init_global_grid(;dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, pe
             if (any([periodx, periody, periodz] .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
             if (any(halowidths .< 1)) error("Invalid arguments: halowidths cannot be less than 1."); end
             if (any((overlaps .> 0) .& (halowidths .> overlaps .÷ 2))) error("Incoherent arguments: if overlap is greater than 0, then halowidth cannot be greater than overlap÷2, in each dimension."); end
+            origin isa AbstractFloat ? (origin = (origin,)) : origin
+            origin = Float64.([((length((origin...,)) == 1) ?  (origin, 0, 0) : ((length(origin) == 2) ? (origin..., 0) : origin))...]);
             if length(origin) != 3 error("Invalid argument: the length of the origin tuple must be at most 3."); end
             set_default_args(
                 dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
@@ -49,7 +51,7 @@ end
     me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, nz; <keyword arguments>)
     me, dims, nprocs, coords, comm_cart = init_global_grid(<keyword arguments>)
 
-Initialize a Cartesian grid of MPI processes (and also MPI itself by default) defining implicitely a global grid. 
+Initialize a Cartesian grid of MPI processes (and also MPI itself by default) defining implicitly a global grid. 
 
 For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny`|`nz`) can be used to do a package initialization without initializing a grid, several grids can then be created by the create_global_grid function and activated via activate_global_grid.
 

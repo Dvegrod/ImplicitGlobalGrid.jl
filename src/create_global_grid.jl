@@ -3,7 +3,7 @@ export create_global_grid
 """
     gg = create_global_grid(nx, ny, nz; <keyword arguments>)
 
-Construct and return a Cartesian grid configuration of MPI processes, defining implicitely a global grid. This grid configuration can then be activated by `activate_global_grid`.
+Construct and return a Cartesian grid configuration of MPI processes, defining implicitly a global grid. This grid configuration can then be activated by `activate_global_grid`.
 
 # Arguments
 - {`nx`|`ny`|`nz`}`::Integer`: the number of elements of the local grid in dimension {x|y|z}.
@@ -58,6 +58,7 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
     nxyz = [nx, ny, nz]
     dims = [dimx, dimy, dimz]
     periods           = Int64.([periodx, periody, periodz]);
+    origin isa AbstractFloat ? (origin = (origin,)) : origin
     origin            = Float64.([((length((origin...,)) == 1) ?  (origin, 0, 0) : ((length(origin) == 2) ? (origin..., 0) : origin))...]);
     centerxyz         = [centerx, centery, centerz];
     overlaps = [overlaps...]
