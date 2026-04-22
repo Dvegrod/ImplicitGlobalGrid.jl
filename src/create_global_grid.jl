@@ -28,9 +28,9 @@ Construct and return a Cartesian grid configuration of MPI processes, defining i
     init_global_grid()                  # Basic call no dimensions are provided thus no grid is defined.
     GG = create_global_grid(nx, ny, nz) # A global grid specification is created
     activate_global_grid(GG)            # The new global grid specification is active
-    halo_exchange!(array)               # The halo exchange is made following the active global grid specification
+    update_halo!(array)                 # The halo exchange is made following the active global grid specification
 
-See also: [`finalize_global_grid`](@ref), [`initialize_global_grid`](@ref), [`activate_global_grid`](@ref)
+See also: [`finalize_global_grid`](@ref), [`init_global_grid`](@ref), [`activate_global_grid`](@ref)
 """
 function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
     dimx::Integer                      = default(:dimx),
