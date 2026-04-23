@@ -1,40 +1,32 @@
 export init_global_grid
 
-function init_global_grid(;dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Union{Bool,Integer}=0, periody::Union{Bool,Integer}=0, periodz::Union{Bool,Integer}=0, origin::Union{Tuple,AbstractFloat}=(0.0, 0.0, 0.0), origin_on_vertex::Bool=false, centerx::Bool=false, centery::Bool=false, centerz::Bool=false, overlaps::Tuple{Int,Int,Int}=(2, 2, 2), halowidths::Tuple{Int,Int,Int}=max.(1, overlaps .÷ 2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, quiet::Bool=false, save_kwarg_defaults::Bool=false)
+function init_package()
     check_not_initialized();
-    if haskey(ENV, "IGG_LOOPVECTORIZATION")
-        error("Environment variable IGG_LOOPVECTORIZATION is not supported anymore. Use IGG_USE_POLYESTER instead.")
-    end
-    # Check no default updates are passed if save_kwarg_defaults is false, device checks are excepmted
-    if differ_default_args(
-        dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
-        centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm,
-        quiet=quiet)
-        if save_kwarg_defaults # Check that new defaults make sense
-            if (any([dimx, dimy, dimz] .< 0)) error("Invalid arguments: dimx, dimy, and dimz cannot be negative."); end
-            if (any([periodx, periody, periodz] .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
-            if (any(halowidths .< 1)) error("Invalid arguments: halowidths cannot be less than 1."); end
-            if (any((overlaps .> 0) .& (halowidths .> overlaps .÷ 2))) error("Incoherent arguments: if overlap is greater than 0, then halowidth cannot be greater than overlap÷2, in each dimension."); end
-            origin isa AbstractFloat ? (origin = (origin,)) : origin
-            origin = Float64.([((length((origin...,)) == 1) ?  (origin, 0, 0) : ((length(origin) == 2) ? (origin..., 0) : origin))...]);
-            if length(origin) != 3 error("Invalid argument: the length of the origin tuple must be at most 3."); end
-            set_default_args(
-                dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
-                centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm,
-                device_type=device_type, select_device=select_device, quiet=quiet)
-        else
-            error("Different defaults for grid arguments have been passed with save_kwarg_defaults=false, set to true to change default grid creation parameters")
-        end
-    end
-    # Device type checks and settings
-    if !(device_type in [DEVICE_TYPE_NONE, DEVICE_TYPE_AUTO, DEVICE_TYPE_CUDA, DEVICE_TYPE_AMDGPU]) error("Argument `device_type`: invalid value obtained ($device_type). Valid values are: $DEVICE_TYPE_CUDA, $DEVICE_TYPE_AMDGPU, $DEVICE_TYPE_NONE, $DEVICE_TYPE_AUTO"); end
-    if ((device_type == DEVICE_TYPE_AUTO) && cuda_loaded() && cuda_functional() && amdgpu_loaded() && amdgpu_functional()) error("Automatic detection of the device type to be used not possible: both CUDA and AMDGPU extensions are loaded and functional. Set keyword argument `device_type` to $DEVICE_TYPE_CUDA or $DEVICE_TYPE_AMDGPU."); end
-    if differ_default_args(device_type=device_type, select_device=select_device) set_default_args(device_type=device_type, select_device=select_device); end
     # Set bools
     set_cuda_loaded()
     set_cuda_functional()
     set_amdgpu_loaded()
     set_amdgpu_functional()
+    if haskey(ENV, "IGG_LOOPVECTORIZATION") error("Environment variable IGG_LOOPVECTORIZATION is not supported anymore. Use IGG_USE_POLYESTER instead."); end
+end
+
+function init_global_grid(;save_kwarg_defaults::Bool=false, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Union{Bool,Integer}=0, periody::Union{Bool,Integer}=0, periodz::Union{Bool,Integer}=0, origin::Union{Tuple,AbstractFloat}=(0.0, 0.0, 0.0), origin_on_vertex::Bool=false, centerx::Bool=false, centery::Bool=false, centerz::Bool=false, overlaps::Tuple{Int,Int,Int}=(2, 2, 2), halowidths::Tuple{Int,Int,Int}=max.(1, overlaps .÷ 2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, quiet::Bool=false)
+    init_package()
+    # Validate and normalize, in some situations even defaults can be invalid so it has to be always checked
+    normalized_args  = normalize_input(dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet)
+    # Set the device type to be used for any possible grid, (!) keep in mind (!) bypasses the set default flag 
+    set_default_args(device_type=device_type, select_device=select_device)
+    # Check no default updates are passed if save_kwarg_defaults is false, device checks are excepmt
+    if differ_default_args(
+        dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
+        centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm,
+        quiet=quiet)
+        if save_kwarg_defaults
+            set_default_args(dimx=normalized_args[1], dimy=normalized_args[2], dimz=normalized_args[3], periodx=normalized_args[4], periody=normalized_args[5], periodz=normalized_args[6], origin=normalized_args[7], origin_on_vertex=normalized_args[8], centerx=normalized_args[9], centery=normalized_args[10], centerz=normalized_args[11], overlaps=normalized_args[12], halowidths=normalized_args[13], disp=normalized_args[14], reorder=normalized_args[15], comm=normalized_args[16], quiet=normalized_args[19])
+        else
+            error("Different defaults for grid arguments have been passed with save_kwarg_defaults=false, set to true to change default grid creation parameters")
+        end
+    end
     if (init_MPI)  # NOTE: init MPI only, once the input arguments have been checked.
         if (MPI.Initialized()) error("MPI is already initialized. Set the argument 'init_MPI=false'."); end
         MPI.Init()
@@ -90,11 +82,21 @@ For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny
 
 See also: [`finalize_global_grid`](@ref), [`select_device`](@ref)
 """
-function init_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1; dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Union{Bool,Integer}=0, periody::Union{Bool,Integer}=0, periodz::Union{Bool,Integer}=0, origin::Union{Tuple,AbstractFloat}=(0.0, 0.0, 0.0), origin_on_vertex::Bool=false, centerx::Bool=false, centery::Bool=false, centerz::Bool=false, overlaps::Tuple{Int,Int,Int}=(2, 2, 2), halowidths::Tuple{Int,Int,Int}=max.(1, overlaps .÷ 2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, quiet::Bool=false)
-    check_not_initialized();
+function init_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1; dimx::Integer=0, dimy::Integer=0, dimz::Integer=0, periodx::Union{Bool,Integer}=0, periody::Union{Bool,Integer}=0, periodz::Union{Bool,Integer}=0, origin::Union{Tuple,AbstractFloat}=(0.0, 0.0, 0.0), origin_on_vertex::Bool=false, centerx::Bool=false, centery::Bool=false, centerz::Bool=false, overlaps::Tuple{Int,Int,Int}=(2, 2, 2), halowidths::Tuple{Int,Int,Int}=max.(1, overlaps .÷ 2), disp::Integer=1, reorder::Integer=1, comm::MPI.Comm=MPI.COMM_WORLD, init_MPI::Bool=true, device_type::String=DEVICE_TYPE_AUTO, select_device::Bool=true, quiet::Bool=false, save_kwarg_defaults::Bool=false)
+    init_package()
+    gg = nothing
     try
-        init_global_grid(; save_kwarg_defaults=false, init_MPI=init_MPI)
-        set_default_args(device_type=device_type, select_device=select_device) # These are needed in create_global_grid, which is called by activate_global_grid, and they are not expected to change in different grids.
+        set_initialized()
+        nx, ny, nz, dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet = normalize_input(nx,ny,nz, dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet)
+        if save_kwarg_defaults
+            set_default_args(dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex, centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm, quiet=quiet)
+        end
+        if (init_MPI)  # NOTE: init MPI only, once the input arguments have been checked.
+            if (MPI.Initialized()) error("MPI is already initialized. Set the argument 'init_MPI=false'."); end
+            MPI.Init()
+        else
+            if (!MPI.Initialized()) error("MPI has not been initialized beforehand. Remove the argument 'init_MPI=false'."); end  # Ensure that MPI is always initialized after init_global_grid().
+        end
         gg = create_global_grid(nx, ny, nz,
             dimx=dimx, dimy=dimy, dimz=dimz,
             periodx=periodx, periody=periody, periodz=periodz,
@@ -103,11 +105,11 @@ function init_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1; dimx::Integ
             overlaps=overlaps, halowidths=halowidths, disp=disp,
             reorder=reorder, comm=comm, quiet=quiet)
         activate_global_grid(gg)
-        return gg.me, gg.dims, gg.nprocs, gg.coords, gg.comm # The typical use case requires only these variables; the remaining can be obtained calling get_global_grid() if needed.
-    catch
+    catch 
         set_initialized(false)
-        rethrow()
+        rethrow()  
     end
+    return gg.me, gg.dims, gg.nprocs, gg.coords, gg.comm # The typical use case requires only these variables; the remaining can be obtained calling get_global_grid() if needed.
 end
 
 # Make sure that timing functions which must be fast at the first user call are already compiled now.

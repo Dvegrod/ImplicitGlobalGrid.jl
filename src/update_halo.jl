@@ -8,7 +8,7 @@ export update_halo!
 !!! note "Advanced"
         update_halo!(A, B, (A=C, halowidths=..., (A=D, halowidths=...), ...)
 
-Update the halo of the given GPU/CPU-array(s) following the currently active global grid specification or a explicitly passed global grid.
+Update the halo of the given GPU/CPU-array(s) following the currently active global grid specification or a explicitly passed global grid. Optionally a global grid specification can be passed, overriding the currently active grid.
 
 # Typical use cases:
     update_halo!(A)                                # Update the halo of the array A.

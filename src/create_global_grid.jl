@@ -19,7 +19,7 @@ Construct and return a Cartesian grid configuration of MPI processes, defining i
     - `disp::Integer=1`:  the displacement argument to `MPI.Cart_shift` in order to determine the neighbors.
     - `reorder::Integer=1`: the reorder argument to `MPI.Cart_create` in order to create the Cartesian process topology.
     - `comm::MPI.Comm=MPI.COMM_WORLD`: the input communicator argument to `MPI.Cart_create` in order to create the Cartesian process topology.
-    For more information, refer to the documentation of MPI.jl / MPI.
+    For more information, refer to the documentation of MPI.jl / MPI. `select_device` and `device_type` are cannot be changed on creation, they shall be set on initialization.
 
 # Return values
 - `gg`: the newly defined global grid
@@ -51,23 +51,23 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
     comm                               = default(:comm),
     quiet                              = default(:quiet),)
     
-    # These have been moved out of the argument list since they are not expected to change in different grids
-    device_type=default(:device_type)
-    select_device=default(:select_device)
     check_initialized()
-    nxyz = [nx, ny, nz]
-    dims = [dimx, dimy, dimz]
-    periods           = Int64.([periodx, periody, periodz]);
-    origin isa AbstractFloat ? (origin = (origin,)) : origin
-    origin            = Float64.([((length((origin...,)) == 1) ?  (origin, 0, 0) : ((length(origin) == 2) ? (origin..., 0) : origin))...]);
-    centerxyz         = [centerx, centery, centerz];
-    overlaps = [overlaps...]
-    halowidths = [halowidths...]
-    cuda_enabled = false
-    amdgpu_enabled = false
-    cudaaware_MPI = [false, false, false]
+    # These have been moved out of the argument list since they are not expected to change in different grids
+    device_type     = default(:device_type)
+    select_device   = default(:select_device)
+    nx, ny, nz, dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet = normalize_input(nx,ny,nz, dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet)
+    nxyz            = [nx, ny, nz]
+    dims            = [dimx, dimy, dimz]
+    periods         = [periodx, periody, periodz]
+    centerxyz       = [centerx, centery, centerz]
+    origin          = [o for o in origin]
+    overlaps        = [overlaps...]
+    halowidths      = [halowidths...]
+    cuda_enabled    = false
+    amdgpu_enabled  = false
+    cudaaware_MPI   = [false, false, false]
     amdgpuaware_MPI = [false, false, false]
-    use_polyester = [false, false, false]
+    use_polyester   = [false, false, false]
     if haskey(ENV, "IGG_CUDAAWARE_MPI") cudaaware_MPI .= (parse(Int64, ENV["IGG_CUDAAWARE_MPI"]) > 0); end
     if haskey(ENV, "IGG_ROCMAWARE_MPI") amdgpuaware_MPI .= (parse(Int64, ENV["IGG_ROCMAWARE_MPI"]) > 0); end
     if haskey(ENV, "IGG_USE_POLYESTER") use_polyester .= (parse(Int64, ENV["IGG_USE_POLYESTER"]) > 0); end
@@ -90,38 +90,21 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
         if (device_type in [DEVICE_TYPE_CUDA,   DEVICE_TYPE_AUTO]) cuda_enabled   = cuda_loaded() && cuda_functional()  end # NOTE: cuda could be enabled/disabled depending on some additional criteria.
         if (device_type in [DEVICE_TYPE_AMDGPU, DEVICE_TYPE_AUTO]) amdgpu_enabled = amdgpu_loaded() && amdgpu_functional() end # NOTE: amdgpu could be enabled/disabled depending on some additional criteria.
     end
-    if (any(nxyz .< 1)) error("Invalid arguments: nx, ny, and nz cannot be less than 1."); end
-    if (any(dims .< 0)) error("Invalid arguments: dimx, dimy, and dimz cannot be negative."); end
-    if (any(periods .∉ ((0, 1),))) error("Invalid arguments: periodx, periody, and periodz must be either 0 or 1."); end
-    if (centerx && origin_on_vertex && isodd(nx)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin on the cell vertex and nx being odd; set either `origin_on_vertex=false` or make nx even."); end
-    if (centery && origin_on_vertex && isodd(ny)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin on the cell vertex and ny being odd; set either `origin_on_vertex=false` or make ny even."); end
-    if (centerz && origin_on_vertex && isodd(nz)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin on the cell vertex and nz being odd; set either `origin_on_vertex=false` or make nz even."); end
-    if (centerx && !origin_on_vertex && iseven(nx)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin the cell center and nx being even; set either `origin_on_vertex=true` or make nx odd."); end
-    if (centery && !origin_on_vertex && iseven(ny)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin the cell center and ny being even; set either `origin_on_vertex=true` or make ny odd."); end
-    if (centerz && !origin_on_vertex && iseven(nz)) error("Incoherent arguments: the grid cannot be centered on the origin with the constraint to have the origin the cell center and nz being even; set either `origin_on_vertex=true` or make nz odd."); end
-    if (any(halowidths .< 1)) error("Invalid arguments: halowidths cannot be less than 1."); end
-    if length(origin) != 3 error("Invalid argument: the length of the origin tuple must be at most 3."); end
-    if (nx == 1) error("Invalid arguments: nx can never be 1.") end
-    if (ny == 1 && nz > 1) error("Invalid arguments: ny cannot be 1 if nz is greater than 1."); end
-    if (any((nxyz .== 1) .& (dims .> 1))) error("Incoherent arguments: if nx, ny, or nz is 1, then the corresponding dimx, dimy or dimz must not be set (or set 0 or 1)."); end
-    if (any((nxyz .< 2 .* overlaps .- 1) .& (periods .> 0))) error("Incoherent arguments: if nx, ny, or nz is smaller than 2*overlaps[1]-1, 2*overlaps[2]-1 or 2*overlaps[3]-1, respectively, then the corresponding periodx, periody or periodz must not be set (or set 0)."); end
-    if (any((overlaps .> 0) .& (halowidths .> overlaps .÷ 2))) error("Incoherent arguments: if overlap is greater than 0, then halowidth cannot be greater than overlap÷2, in each dimension."); end
-    dims[(nxyz.==1).&(dims.==0)] .= 1   # Setting any of nxyz to 1, means that the corresponding dimension must also be 1 in the global grid. Thus, the corresponding dims entry must be 1.
-    nprocs = MPI.Comm_size(comm)
-    dims .= MPI.Dims_create!(nprocs, dims)
-    comm_cart = MPI.Cart_create(comm, dims, periods, reorder)
-    me = MPI.Comm_rank(comm_cart)
-    coords = MPI.Cart_coords(comm_cart)
-    neighbors = fill(MPI.PROC_NULL, NNEIGHBORS_PER_DIM, NDIMS_MPI)
+    nprocs         = MPI.Comm_size(comm)
+    dims          .= MPI.Dims_create!(nprocs, dims)
+    comm_cart      = MPI.Cart_create(comm, dims, periods, reorder)
+    me             = MPI.Comm_rank(comm_cart)
+    coords         = MPI.Cart_coords(comm_cart)
+    neighbors      = fill(MPI.PROC_NULL, NNEIGHBORS_PER_DIM, NDIMS_MPI)
     for i = 1:NDIMS_MPI
         neighbors[:, i] .= MPI.Cart_shift(comm_cart, i - 1, disp)
     end
-    nxyz_g = dims .* (nxyz .- overlaps) .+ overlaps .* (periods .== 0) # E.g. for dimension x with ol=2 and periodx=0: dimx*(nx-2)+2
-    gg = GlobalGrid(nxyz_g, nxyz, dims, overlaps, halowidths, origin, origin_on_vertex, centerxyz, nprocs, me, coords, neighbors, periods, disp, reorder, comm_cart, cuda_enabled, amdgpu_enabled, cudaaware_MPI, amdgpuaware_MPI, use_polyester, quiet)
-    cuda_support_string = (cuda_enabled && all(cudaaware_MPI)) ? "CUDA-aware" : (cuda_enabled && any(cudaaware_MPI)) ? "CUDA(-aware)" : (cuda_enabled) ? "CUDA" : ""
+    nxyz_g                = dims .* (nxyz .- overlaps) .+ overlaps .* (periods .== 0) # E.g. for dimension x with ol=2 and periodx=0: dimx*(nx-2)+2
+    gg                    = GlobalGrid(nxyz_g, nxyz, dims, overlaps, halowidths, origin, origin_on_vertex, centerxyz, nprocs, me, coords, neighbors, periods, disp, reorder, comm_cart, cuda_enabled, amdgpu_enabled, cudaaware_MPI, amdgpuaware_MPI, use_polyester, quiet)
+    cuda_support_string   = (cuda_enabled && all(cudaaware_MPI)) ? "CUDA-aware" : (cuda_enabled && any(cudaaware_MPI)) ? "CUDA(-aware)" : (cuda_enabled) ? "CUDA" : ""
     amdgpu_support_string = (amdgpu_enabled && all(amdgpuaware_MPI)) ? "AMDGPU-aware" : (amdgpu_enabled && any(amdgpuaware_MPI)) ? "AMDGPU(-aware)" : (amdgpu_enabled) ? "AMDGPU" : ""
-    gpu_support_string = join(filter(!isempty, [cuda_support_string, amdgpu_support_string]), ", ")
-    support_string = isempty(gpu_support_string) ? "none" : gpu_support_string
+    gpu_support_string    = join(filter(!isempty, [cuda_support_string, amdgpu_support_string]), ", ")
+    support_string        = isempty(gpu_support_string) ? "none" : gpu_support_string
     if (!quiet && me == 0) println("Global grid: $(nxyz_g[1])x$(nxyz_g[2])x$(nxyz_g[3]) (nprocs: $nprocs, dims: $(dims[1])x$(dims[2])x$(dims[3]); device support: $support_string)"); end
     if ((cuda_enabled || amdgpu_enabled) && select_device) _select_device(gg); end
     return gg
