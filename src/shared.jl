@@ -61,7 +61,7 @@ struct GlobalGrid
     dims::Vector{GGInt}
     overlaps::Vector{GGInt}
     halowidths::Vector{GGInt}
-    origin::Vector{GGInt}
+    origin::Vector{Float64}
     origin_on_vertex::Bool
     centerxyz::Vector{Bool}
     nprocs::GGInt

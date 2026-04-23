@@ -68,9 +68,9 @@ function create_global_grid(nx::Integer, ny::Integer=1, nz::Integer=1;
     cudaaware_MPI   = [false, false, false]
     amdgpuaware_MPI = [false, false, false]
     use_polyester   = [false, false, false]
-    if haskey(ENV, "IGG_CUDAAWARE_MPI") cudaaware_MPI .= (parse(Int64, ENV["IGG_CUDAAWARE_MPI"]) > 0); end
+    if haskey(ENV, "IGG_CUDAAWARE_MPI") cudaaware_MPI   .= (parse(Int64, ENV["IGG_CUDAAWARE_MPI"]) > 0); end
     if haskey(ENV, "IGG_ROCMAWARE_MPI") amdgpuaware_MPI .= (parse(Int64, ENV["IGG_ROCMAWARE_MPI"]) > 0); end
-    if haskey(ENV, "IGG_USE_POLYESTER") use_polyester .= (parse(Int64, ENV["IGG_USE_POLYESTER"]) > 0); end
+    if haskey(ENV, "IGG_USE_POLYESTER") use_polyester   .= (parse(Int64, ENV["IGG_USE_POLYESTER"]) > 0); end
     if none(cudaaware_MPI)
         if haskey(ENV, "IGG_CUDAAWARE_MPI_DIMX") cudaaware_MPI[1] = (parse(Int64, ENV["IGG_CUDAAWARE_MPI_DIMX"]) > 0); end
         if haskey(ENV, "IGG_CUDAAWARE_MPI_DIMY") cudaaware_MPI[2] = (parse(Int64, ENV["IGG_CUDAAWARE_MPI_DIMY"]) > 0); end
