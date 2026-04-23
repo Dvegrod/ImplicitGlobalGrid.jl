@@ -153,7 +153,7 @@ end
 function normalize_input(dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet)
     # Signature includes all params for easy extensibility of checks
     dims              = [dimx, dimy, dimz];
-    periods           = Int64.[periodx, periody, periodz];
+    periods           = Int64.([periodx, periody, periodz]);
     # origin: In the GG is a vector but in the arguments is a tuple
     origin            = Float64.((((length((origin...,)) == 1) ?  (origin, 0, 0) : ((length(origin) == 2) ? (origin..., 0) : origin))))
     # Value checks
