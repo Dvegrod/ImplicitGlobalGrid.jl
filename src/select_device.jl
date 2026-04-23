@@ -2,6 +2,7 @@ export select_device
 
 """
     select_device()
+    select_device(gg::GlobalGrid)
 
 Select the device (GPU) corresponding to the node-local MPI rank and return its ID.
 
