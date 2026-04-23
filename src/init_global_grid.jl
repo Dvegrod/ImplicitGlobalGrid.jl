@@ -43,9 +43,9 @@ end
     me, dims, nprocs, coords, comm_cart = init_global_grid(nx, ny, nz; <keyword arguments>)
     me, dims, nprocs, coords, comm_cart = init_global_grid(<keyword arguments>)
 
-Initialize a Cartesian grid of MPI processes (and also MPI itself by default) defining implicitly a global grid. 
+Initialize the package and create a Cartesian grid of MPI processes (and also MPI itself by default) defining implicitly a global grid. 
 
-For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny`|`nz`) can be used to do a package initialization without initializing a grid, several grids can then be created by the create_global_grid function and activated via activate_global_grid.
+For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny`|`nz`) can be used to do a package initialization without creating a grid, several grids can then be created by the create_global_grid function and activated via activate_global_grid.
 
 # Arguments
 - {`nx`|`ny`|`nz`}`::Integer`: the number of elements of the local grid in dimension {x|y|z}.
@@ -55,6 +55,7 @@ For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny
 - `origin_on_vertex::Bool=false`: whether the origin is on the cell vertex; else, it is on the cell center (default). The default implies that the space step `dx` is computed in the user code as `dx=lx/(nx-1)`, where `lx` is the length of the global grid in dimension x. Setting the origin on the vertex implies that the space step is computed as `dx=lx/nx`, instead. The analog applies for the dimensions y and z.
 - {`centerx`|`centery`|`centerz`}`::Bool=false`: whether to center the grid on the origin (`true`) or not (`false`) in dimension {x|y|z}. By default, the grid is extends from `origin` in the positive direction of the corresponding dimension.
 - `quiet::Bool=false`: whether to suppress printing information like the size of the global grid (`true`) or not (`false`).
+- `save_kwarg_defaults::Bool=false`: whether to update the default values of the keyword arguments of `create_global_grid` with the ones passed to `init_global_grid`. If `false` and keyword arguments are passed with values different from the current defaults, an error is thrown. The parameters `select_device` and `device_type` are not affected by this argument, they can only and always be set on initialization.
 !!! note "Advanced keyword arguments"
     - `overlaps::Tuple{Int,Int,Int}=(2,2,2)`: the number of elements adjacent local grids overlap in dimension x, y and z. By default (value `(2,2,2)`), an array `A` of size (`nx`, `ny`, `nz`) on process 1 (`A_1`) overlaps the corresponding array `A` on process 2 (`A_2`) by `2` indices if the two processes are adjacent. E.g., if `overlaps[1]=2` and process 2 is the right neighbor of process 1 in dimension x, then `A_1[end-1:end,:,:]` overlaps `A_2[1:2,:,:]`. That means, after every call `update_halo!(A)`, we have `all(A_1[end-1:end,:,:] .== A_2[1:2,:,:])` (`A_1[end,:,:]` is the halo of process 1 and `A_2[1,:,:]` is the halo of process 2). The analog applies for the dimensions y and z.
     - `halowidths::Tuple{Int,Int,Int}=max.(1,overlaps.÷2)`: the default width of an array's halo in dimension x, y and z (must be greater or equal to 1). The default can be overwritten per array in the function [`update_halo`](@ref).
@@ -62,8 +63,8 @@ For use cases needing multiple grid arrangements, the dispatch without (`nx`|`ny
     - `reorder::Integer=1`: the reorder argument to `MPI.Cart_create` in order to create the Cartesian process topology.
     - `comm::MPI.Comm=MPI.COMM_WORLD`: the input communicator argument to `MPI.Cart_create` in order to create the Cartesian process topology.
     - `init_MPI::Bool=true`: whether to initialize MPI (`true`) or not (`false`).
-    - `device_type::String="auto"`: the type of the device to be used if available: `"CUDA"`, `"AMDGPU"`, `"none"` or `"auto"`. Set `device_type="none"` if you want to use only CPUs on a system having also GPUs. If `device_type` is `"auto"` (default), it is automatically determined, depending on which of the modules used for programming the devices (CUDA.jl or AMDGPU.jl) was imported before ImplicitGlobalGrid; if both were imported, an error will be given if `device_type` is set as `"auto"`.
-    - `select_device::Bool=true`: whether to automatically select the device (GPU) (`true`) or not (`false`) if CUDA or AMDGPU was imported and `device_type` is not `"none"`. If `true`, it selects the device corresponding to the node-local MPI rank. This method of device selection suits both single and multi-device compute nodes and is recommended in general. It is also the default method of device selection of the *function* [`select_device`](@ref).
+    - `device_type::String="auto"`: the type of the device to be used if available: `"CUDA"`, `"AMDGPU"`, `"none"` or `"auto"`. Set `device_type="none"` if you want to use only CPUs on a system having also GPUs. If `device_type` is `"auto"` (default), it is automatically determined, depending on which of the modules used for programming the devices (CUDA.jl or AMDGPU.jl) was imported before ImplicitGlobalGrid; if both were imported, an error will be given if `device_type` is set as `"auto"`. This can only be set up on initialization.
+    - `select_device::Bool=true`: whether to automatically select the device (GPU) (`true`) or not (`false`) if CUDA or AMDGPU was imported and `device_type` is not `"none"`. If `true`, it selects the device corresponding to the node-local MPI rank. This method of device selection suits both single and multi-device compute nodes and is recommended in general. It is also the default method of device selection of the *function* [`select_device`](@ref). This can only be set up on initialization.
     For more information, refer to the documentation of MPI.jl / MPI.
 
 # Return values

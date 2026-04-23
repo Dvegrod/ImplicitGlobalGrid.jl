@@ -100,11 +100,11 @@ let
 end
 
 """
-    active_global_grid()
+    active_global_grid() :: GlobalGrid
 
-    Return a deep copy of the currently active global grid. Will throw an error if no global grid has been created and activated yet.
+    Returns a deep copy of the currently active global grid. This methods will throw an error if no global grid has been created and activated yet.
 """
-function active_global_grid()
+function active_global_grid() :: GlobalGrid
     if grid_is_initialized() return deepcopy(global_grid()) else error("No global grid has been activated yet.") end
 end
 
@@ -153,8 +153,7 @@ end
 function normalize_input(dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet)
     # Signature includes all params for easy extensibility of checks
     dims              = [dimx, dimy, dimz];
-    periods           = [periodx, periody, periodz];
-    origin isa AbstractFloat ? (origin = (origin,)) : origin
+    periods           = Int64.[periodx, periody, periodz];
     # origin: In the GG is a vector but in the arguments is a tuple
     origin            = Float64.((((length((origin...,)) == 1) ?  (origin, 0, 0) : ((length(origin) == 2) ? (origin..., 0) : origin))))
     # Value checks
