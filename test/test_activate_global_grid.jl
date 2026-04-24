@@ -95,6 +95,9 @@ nz = 1;
 
         @test GG.grid_is_initialized()
         @test GG.global_grid().periods == [0, 0, 0]
+        # Mutation checks
+        @test gg1.periods == [0, 0, 0]
+        @test gg2.periods == [1, 0, 0]
 
         finalize_global_grid(finalize_MPI=false)
     end
