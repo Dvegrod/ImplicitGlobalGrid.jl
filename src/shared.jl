@@ -84,7 +84,7 @@ const GLOBAL_GRID_NULL = GlobalGrid(GGInt[-1,-1,-1], GGInt[-1,-1,-1], GGInt[-1,-
 # Macro to switch on/off check_initialized() for performance reasons (potentially relevant for tools.jl).
 macro check_initialized() :(check_initialized();) end  #FIXME: Alternative: macro check_initialized() end
 let
-    global global_grid, set_global_grid, grid_is_initialized, check_initialized, check_not_initialized, get_global_grid, set_initialized
+    global global_grid, set_global_grid, grid_is_initialized, check_initialized, check_not_initialized, check_grid_is_initialized, get_global_grid, set_initialized
 
     _global_grid::GlobalGrid           = GLOBAL_GRID_NULL
     _init_::Bool                        = false
