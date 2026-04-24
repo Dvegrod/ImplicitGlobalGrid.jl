@@ -160,7 +160,7 @@ dz = 1.0
         P_g_ref = [x_g(ix,dx,P_g) for ix=1:size(P_g,1)];
         P_g_ref .= -P_g_ref[1] .+ P_g_ref;  # NOTE: We add the first value of P_g_ref to have it start at 0.0.
         
-        @test_throws gather!(P, P_g);
+        @test_throws ErrorException gather!(P, P_g);
         
         gg = create_global_grid(nx, 1, 1);
         activate_global_grid(gg)
