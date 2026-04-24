@@ -91,10 +91,10 @@ let
     global_grid()::GlobalGrid          = (@check_initialized(); _global_grid::GlobalGrid) # Unprotected access for internal use
     set_global_grid(gg::GlobalGrid)    = (_global_grid = gg;)
     set_initialized(val::Bool = true)  = (_init_ = val; nothing)
-    grid_is_initialized()              = (@check_initialized(); _global_grid.nprocs > 0)
+    grid_is_initialized()              = (_global_grid.nprocs > 0)
     check_initialized()                = if !_init_ error("No function of the module can be called before init_global_grid().") end
     check_not_initialized()            = if _init_ error("init_global_grid() can only be called once before finalize_global_grid().") end
-    check_grid_is_initialized()        = if !grid_is_initialized() error("No global grid has been created and activated yet.") end
+    check_grid_is_initialized()        = (@check_initialized(); if !grid_is_initialized() error("No global grid has been created and activated yet.") end)
 
     "Return a deep copy of the global grid."
     get_global_grid()                  = deepcopy(_global_grid) # Protected access for internal use

@@ -82,7 +82,7 @@ nz = 1;
         gg2 = create_global_grid(nx, periodx=1)
 
         @require !(P == P_ref)
-        update_halo!(P; global_grid=gg2)
+        update_halo!(P; active_global_grid=gg2)
         @test (P == P_ref)
 
         activate_global_grid(gg1)
@@ -90,7 +90,7 @@ nz = 1;
         
 
         @require !(P == P_ref)
-        update_halo!(P; global_grid=gg2)
+        update_halo!(P; active_global_grid=gg2)
         @test (P == P_ref)
 
         @test GG.grid_is_initialized()
