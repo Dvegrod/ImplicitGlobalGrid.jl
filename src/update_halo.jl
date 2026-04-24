@@ -113,8 +113,8 @@ let
 
     function free_update_halo_buffers()
         free_update_halo_cpubuffers()
-        if (cuda_enabled() && none(cudaaware_MPI()))     free_update_halo_cubuffers() end
-        if (amdgpu_enabled() && none(amdgpuaware_MPI())) free_update_halo_rocbuffers() end
+        if cuda_loaded() free_update_halo_cubuffers() end
+        if amdgpu_loaded() free_update_halo_rocbuffers() end
         GC.gc() #TODO: see how to modify this!
     end
 
