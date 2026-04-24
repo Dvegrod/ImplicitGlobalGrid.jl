@@ -891,6 +891,6 @@ let
     global tic, toc
     t0 = nothing
 
-    tic() = ( check_initialized(); MPI.Barrier(comm()); t0 = time() )
-    toc() = ( check_initialized(); MPI.Barrier(comm()); time() - t0 )
+    tic() = ( check_grid_is_initialized(); MPI.Barrier(comm()); t0 = time() )
+    toc() = ( check_grid_is_initialized(); MPI.Barrier(comm()); time() - t0 )
 end
