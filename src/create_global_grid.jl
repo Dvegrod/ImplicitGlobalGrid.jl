@@ -19,7 +19,7 @@ Construct and return a Cartesian grid configuration of MPI processes, defining i
     - `disp::Integer=1`:  the displacement argument to `MPI.Cart_shift` in order to determine the neighbors.
     - `reorder::Integer=1`: the reorder argument to `MPI.Cart_create` in order to create the Cartesian process topology.
     - `comm::MPI.Comm=MPI.COMM_WORLD`: the input communicator argument to `MPI.Cart_create` in order to create the Cartesian process topology.
-    For more information, refer to the documentation of MPI.jl / MPI. `select_device` and `device_type` are cannot be changed on creation, they shall be set on initialization.
+    For more information, refer to the documentation of MPI.jl / MPI. `select_device` and `device_type` cannot be changed during grid creation; they must be set during initialization.
 
 # Return values
 - `gg`: the newly defined global grid
