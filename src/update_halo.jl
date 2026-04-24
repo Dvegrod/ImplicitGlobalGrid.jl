@@ -30,13 +30,18 @@ Update the halo of the given GPU/CPU-array(s) following the currently active glo
 function update_halo!(A::Union{GGArray, GGFieldConvertible, GGCellArray, GGCellFieldConvertible, GGField}...; dims=(NDIMS_MPI,(1:NDIMS_MPI-1)...), active_global_grid=global_grid())
     check_initialized()
     old = global_grid()
-    activate_global_grid(active_global_grid)
-    if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first or pass it as an argument.") end
-    As = ((extract.(A)...)...,);
-    fields = wrap_field.(As);
-    check_fields(fields...);
-    _update_halo!(fields...; dims=dims);  # Assignment of A to fields in the internal function _update_halo!() as vararg A can consist of multiple fields; A will be used for a single field in the following (The args of update_halo! must however be "A..." for maximal simplicity and elegance for the user).
-    activate_global_grid(old)
+    try
+        activate_global_grid(active_global_grid)
+        if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first or pass it as an argument.") end
+        As = ((extract.(A)...)...,);
+        fields = wrap_field.(As);
+        check_fields(fields...);
+        _update_halo!(fields...; dims=dims);  # Assignment of A to fields in the internal function _update_halo!() as vararg A can consist of multiple fields; A will be used for a single field in the following (The args of update_halo! must however be "A..." for maximal simplicity and elegance for the user).
+    catch
+        rethrow(e)
+    finally
+        activate_global_grid(old)
+    end
     return nothing
 end
 
