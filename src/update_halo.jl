@@ -29,7 +29,8 @@ Update the halo of the given GPU/CPU-array(s) following the currently active glo
 """
 function update_halo!(A::Union{GGArray, GGFieldConvertible, GGCellArray, GGCellFieldConvertible, GGField}...; dims=(NDIMS_MPI,(1:NDIMS_MPI-1)...), active_global_grid=global_grid())
     check_initialized()
-    old = global_grid()
+    # If no global grid is active we swap the null grid with the argument passed one, if that one is null as well a error will be thrown
+    old = grid_is_initialized() ? global_grid() : GLOBAL_GRID_NULL
     try
         activate_global_grid(active_global_grid)
         if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first or pass it as an argument.") end

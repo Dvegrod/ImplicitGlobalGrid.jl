@@ -54,19 +54,23 @@ nz = 1;
             @test gg.neighbors == [p0 p0 0; p0 p0 0]
             @test gg.periods   == [0, 0, 1]
         end;
+        finalize_global_grid(finalize_MPI=false);
     end;
 
     @testset "3. setting default parameters on initialization and grid creation" begin
-        finalize_global_grid(finalize_MPI=false);
         init_global_grid(save_kwarg_defaults=true, quiet=true, init_MPI=false, periodx=1, periody=1);
 
         gg = create_global_grid(nx, ny, nz, quiet=true);
         @testset "values in global grid" begin # Checks if new defaults spread
             @test gg.periods   == [1, 1, 0]
         end;
+
+        finalize_global_grid(finalize_MPI=false);
     end;
 
     @testset "4. post-MPI_Init-exceptions" begin
+
+        init_global_grid(save_kwarg_defaults=true, quiet=true, init_MPI=false, periodx=1, periody=1);
         @require MPI.Initialized()
         @require !GG.grid_is_initialized()
 

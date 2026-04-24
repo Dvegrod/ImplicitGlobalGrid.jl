@@ -17,10 +17,7 @@ function init_global_grid(;save_kwarg_defaults::Bool=false, device_type::String=
     # Set the device type to be used for any possible grid, (!) keep in mind (!) bypasses the set default flag 
     set_default_args(device_type=normalized_args[17], select_device=normalized_args[18])
     # Check no default updates are passed if save_kwarg_defaults is false, device checks are exempt
-    if differ_default_args(
-        dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex,
-        centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm,
-        quiet=quiet)
+    if differ_default_args(dimx=normalized_args[1], dimy=normalized_args[2], dimz=normalized_args[3], periodx=normalized_args[4], periody=normalized_args[5], periodz=normalized_args[6], origin=normalized_args[7], origin_on_vertex=normalized_args[8], centerx=normalized_args[9], centery=normalized_args[10], centerz=normalized_args[11], overlaps=normalized_args[12], halowidths=normalized_args[13], disp=normalized_args[14], reorder=normalized_args[15], comm=normalized_args[16], quiet=normalized_args[19])
         if save_kwarg_defaults
             set_default_args(dimx=normalized_args[1], dimy=normalized_args[2], dimz=normalized_args[3], periodx=normalized_args[4], periody=normalized_args[5], periodz=normalized_args[6], origin=normalized_args[7], origin_on_vertex=normalized_args[8], centerx=normalized_args[9], centery=normalized_args[10], centerz=normalized_args[11], overlaps=normalized_args[12], halowidths=normalized_args[13], disp=normalized_args[14], reorder=normalized_args[15], comm=normalized_args[16], quiet=normalized_args[19])
         else

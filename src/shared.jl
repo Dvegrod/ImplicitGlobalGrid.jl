@@ -1,7 +1,7 @@
 import MPI
 using Base.Threads
 using CellArrays
-
+export active_global_grid
 
 ##------------------------------------
 ## HANDLING OF CUDA AND AMDGPU SUPPORT
@@ -88,7 +88,7 @@ let
 
     _global_grid::GlobalGrid           = GLOBAL_GRID_NULL
     _init_::Bool                        = false
-    global_grid()::GlobalGrid          = (@check_initialized(); _global_grid::GlobalGrid) # Unprotected access for internal use
+    global_grid()::GlobalGrid          = (check_grid_is_initialized(); _global_grid::GlobalGrid) # Protected access for internal use
     set_global_grid(gg::GlobalGrid)    = (_global_grid = gg;)
     set_initialized(val::Bool = true)  = (_init_ = val; nothing)
     grid_is_initialized()              = (_global_grid.nprocs > 0)
@@ -97,7 +97,7 @@ let
     check_grid_is_initialized()        = (@check_initialized(); if !grid_is_initialized() error("No global grid has been created and activated yet.") end)
 
     "Return a deep copy of the global grid."
-    get_global_grid()                  = deepcopy(_global_grid) # Protected access for internal use
+    get_global_grid()                  = deepcopy(_global_grid) # Unprotected access for internal use
 end
 
 """
