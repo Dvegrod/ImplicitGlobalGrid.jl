@@ -558,6 +558,21 @@ nprocs = MPI.Comm_size(MPI.COMM_WORLD);
         finalize_global_grid(finalize_MPI=false);
     end;
 
+    @testset "4. tic toc with uninitialized global grid" begin
+        @testthrows tic();
+        @testthrows toc();
+
+        initialize_global_grid(quiet=true, save_kwarg_defaults=true, init_MPI=false);
+
+        @testthrows tic();
+        @testthrows toc();
+
+        gg = create_global_grid(4,4,4);
+        activate_global_grid(gg);
+
+        @test (tic() isa Float64) && (toc() isa Float64)
+    end;
+
     #TODO: add testset with metagrid with origin_on_vertex and center and periodic and origin on the other dimensions. Add missing tests for nx_g etc. including wrap periodic
 end;
 
