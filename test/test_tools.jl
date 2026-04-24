@@ -559,13 +559,13 @@ nprocs = MPI.Comm_size(MPI.COMM_WORLD);
     end;
 
     @testset "4. tic toc with uninitialized global grid" begin
-        @testthrows tic();
-        @testthrows toc();
+        @test_throws tic();
+        @test_throws toc();
 
         initialize_global_grid(quiet=true, save_kwarg_defaults=true, init_MPI=false);
 
-        @testthrows tic();
-        @testthrows toc();
+        @test_throws tic();
+        @test_throws toc();
 
         gg = create_global_grid(4,4,4);
         activate_global_grid(gg);
