@@ -15,6 +15,7 @@ function init_global_grid(;save_kwarg_defaults::Bool=false, device_type::String=
     # Validate and normalize, in some situations even defaults can be invalid so it has to be always checked
     dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet  = normalize_input(dimx, dimy, dimz, periodx, periody, periodz, origin, origin_on_vertex, centerx, centery, centerz, overlaps, halowidths, disp, reorder, comm, device_type, select_device, quiet)
     # Set the device type to be used for any possible grid, (!) keep in mind (!) bypasses the set default flag 
+    set_default_args(device_type=device_type, select_device=select_device)
     # Check no default updates are passed if save_kwarg_defaults is false, device checks are exempt
     if differ_default_args(dimx=dimx, dimy=dimy, dimz=dimz, periodx=periodx, periody=periody, periodz=periodz, origin=origin, origin_on_vertex=origin_on_vertex, centerx=centerx, centery=centery, centerz=centerz, overlaps=overlaps, halowidths=halowidths, disp=disp, reorder=reorder, comm=comm, quiet=quiet)
         if save_kwarg_defaults
