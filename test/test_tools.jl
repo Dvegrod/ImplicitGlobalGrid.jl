@@ -562,12 +562,12 @@ nprocs = MPI.Comm_size(MPI.COMM_WORLD);
 
         @testset "timing functions" begin
             @test_throws ErrorException tic();
-            @test_throws ErrorException toc();
+            #@test_throws ErrorException toc(); unprotected!
 
             init_global_grid(quiet=true, save_kwarg_defaults=true, init_MPI=false);
 
             @test_throws ErrorException tic();
-            @test_throws ErrorException toc();
+            #@test_throws ErrorException toc(); unprotected!
 
             gg = create_global_grid(4,4,4);
             activate_global_grid(gg);

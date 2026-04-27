@@ -84,7 +84,7 @@ const GLOBAL_GRID_NULL = GlobalGrid(GGInt[-1,-1,-1], GGInt[-1,-1,-1], GGInt[-1,-
 # Macro to switch on/off check_initialized() for performance reasons (potentially relevant for tools.jl).
 macro check_initialized() :(check_initialized();) end  #FIXME: Alternative: macro check_initialized() end
 let
-    global global_grid, set_global_grid, grid_is_initialized, check_initialized, check_not_initialized, check_grid_is_initialized, get_global_grid, set_initialized
+    global global_grid, set_global_grid, grid_is_initialized, check_initialized, check_not_initialized, check_grid_is_initialized, get_global_grid, set_initialized, _unsafe_get_comm
 
     _global_grid::GlobalGrid           = GLOBAL_GRID_NULL
     _init_::Bool                        = false
@@ -94,16 +94,17 @@ let
     grid_is_initialized()              = (_global_grid.nprocs > 0)
     check_initialized()                = if !_init_ error("No function of the module can be called before init_global_grid().") end
     check_not_initialized()            = if _init_ error("init_global_grid() can only be called once before finalize_global_grid().") end
-    check_grid_is_initialized()        = (@check_initialized(); if !grid_is_initialized() error("No global grid has been created and activated yet.") end)
+    check_grid_is_initialized()        = (if !grid_is_initialized() error("No global grid has been created and activated yet, or the package has not been initialized.") end)
 
     "Return a deep copy of the global grid."
-    get_global_grid()                  = deepcopy(_global_grid) # Unprotected access for internal use
+    get_global_grid()                 = deepcopy(_global_grid) # Unguarded legacy access
+    _unsafe_get_comm()         = _global_grid.comm # For toc so there is no overhead of init checks
 end
 
 """
     active_global_grid() :: GlobalGrid
 
-    Returns a deep copy of the currently active global grid. This methods will throw an error if no global grid has been created and activated yet.
+    Returns a deep copy of the currently active global grid. This method will throw an error if no global grid has been created and activated yet.
 """
 function active_global_grid() :: GlobalGrid
     # This is a user facing function so it is both alter protected and null grid protected.

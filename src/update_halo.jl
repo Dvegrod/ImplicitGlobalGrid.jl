@@ -31,18 +31,13 @@ function update_halo!(A::Union{GGArray, GGFieldConvertible, GGCellArray, GGCellF
     check_initialized()
     # If no global grid is active we swap the null grid with the argument passed one, if that one is null as well a error will be thrown
     old = grid_is_initialized() ? global_grid() : GLOBAL_GRID_NULL
-    try
-        activate_global_grid(active_global_grid)
-        if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first or pass it as an argument.") end
-        As = ((extract.(A)...)...,);
-        fields = wrap_field.(As);
-        check_fields(fields...);
-        _update_halo!(fields...; dims=dims);  # Assignment of A to fields in the internal function _update_halo!() as vararg A can consist of multiple fields; A will be used for a single field in the following (The args of update_halo! must however be "A..." for maximal simplicity and elegance for the user).
-    catch
-        rethrow(e)
-    finally
-        activate_global_grid(old)
-    end
+    activate_global_grid(active_global_grid)
+    if !grid_is_initialized() error("No grid is active when calling update_halo!, activate a grid specification first or pass it as an argument.") end
+    As = ((extract.(A)...)...,);
+    fields = wrap_field.(As);
+    check_fields(fields...);
+    _update_halo!(fields...; dims=dims);  # Assignment of A to fields in the internal function _update_halo!() as vararg A can consist of multiple fields; A will be used for a single field in the following (The args of update_halo! must however be "A..." for maximal simplicity and elegance for the user).
+    activate_global_grid(old)
     return nothing
 end
 

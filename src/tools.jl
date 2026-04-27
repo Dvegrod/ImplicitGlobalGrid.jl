@@ -892,5 +892,5 @@ let
     t0 = nothing
 
     tic() = ( MPI.Barrier(comm()); t0 = time() )
-    toc() = ( MPI.Barrier(comm()); time() - t0 )
+    toc() = ( MPI.Barrier(_unsafe_get_comm()); time() - t0 )
 end
